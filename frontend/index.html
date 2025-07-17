@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrintBridge | Simple File Transfer</title>
+  <style>
+    /* --- Basic Setup & Theme --- */
+    :root {
+      --primary-color: #007bff;
+      --primary-hover: #0056b3;
+      --success-color: #28a745;
+      --error-color: #dc3545;
+      --light-gray: #f8f9fa;
+      --border-color: #dee2e6;
+      --text-color: #333;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+      color: var(--text-color);
+    }
+
+    .container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 90%;
+      max-width: 500px;
+      transition: all 0.3s ease;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 2.5rem;
+      color: var(--text-color);
+    }
+
+    .tagline {
+      margin: 0 0 30px;
+      font-size: 1.1rem;
+      color: #6c757d;
+    }
+
+    /* --- Drop Zone Styling & Animations --- */
+    #drop-zone {
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 40px 20px;
+      cursor: pointer;
+      transition: all 0.3s ease-in-out;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #drop-zone.drag-over {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 15px rgba(0, 123, 255, 0.3);
+      transform: scale(1.02);
+    }
+
+    #drop-zone:hover {
+      background-color: var(--light-gray);
+    }
+
+    .upload-icon {
+      font-size: 3rem;
+      color: var(--primary-color);
+      margin-bottom: 15px;
+      animation: bounce 2s infinite ease-in-out;
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    /* --- Button Styling & Animations --- */
+    button {
+      margin-top: 20px;
+      padding: 12px 25px;
+      font-size: 1rem;
+      font-weight: bold;
+      color: white;
+      background-color: var(--primary-color);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+    
+    button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+
+    /* Loading Spinner for Button */
+    button .spinner {
+      display: none;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s ease-in-out infinite;
+      margin: 0 auto;
+    }
+    
+    button.loading .button-text {
+      visibility: hidden;
+    }
+
+    button.loading .spinner {
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin-top: -10px; /* half height */
+      margin-left: -10px; /* half width */
+    }
+
+
+    /* --- Result Area --- */
+    #result {
+      margin-top: 25px;
+      padding: 15px;
+      border-radius: 8px;
+      opacity: 0; /* Initially hidden */
+      transform: translateY(10px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    #result.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #result.success {
+      background-color: #e9f7ef;
+      color: var(--success-color);
+      border: 1px solid #d1e7dd;
+    }
+
+    #result.error {
+      background-color: #f8d7da;
+      color: var(--error-color);
+      border: 1px solid #f5c6cb;
+    }
+    
+    #result a {
+      color: var(--primary-hover);
+      font-weight: bold;
+      word-break: break-all;
+    }
+
+    /* --- Keyframe Animations --- */
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-20px);
+      }
+      60% {
+        transform: translateY(-10px);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>PrintBridge</h1>
+    <p class="tagline">Your simple bridge to send files anywhere.</p>
+
+    <div id="drop-zone">
+      <div class="upload-icon">📤</div>
+      <span id="drop-zone-text"><b>Drag & drop files here</b><br>or click to select</span>
+    </div>
+
+    <input type="file" id="file-input" multiple />
+
+    <button id="upload-btn">
+      <span class="button-text">Upload</span>
+      <div class="spinner"></div>
+    </button>
+    
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const dropZone = document.getElementById('drop-zone');
+    const dropZoneText = document.getElementById('drop-zone-text');
+    const fileInput = document.getElementById('file-input');
+    const uploadBtn = document.getElementById('upload-btn');
+    const resultDiv = document.getElementById('result');
+    let files = [];
+
+    // --- Event Listeners ---
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      files = Array.from(e.dataTransfer.files);
+      updateDropZoneText();
+    });
+
+    fileInput.addEventListener('change', () => {
+      files = Array.from(fileInput.files);
+      updateDropZoneText();
+    });
+    
+    uploadBtn.addEventListener('click', handleUpload);
+
+    // --- Helper Functions ---
+    function updateDropZoneText() {
+      if (files.length === 0) {
+        dropZoneText.innerHTML = '<b>Drag & drop files here</b><br>or click to select';
+      } else if (files.length === 1) {
+        dropZoneText.innerHTML = `✅ <b>${files[0].name}</b> selected.`;
+      } else {
+        dropZoneText.innerHTML = `✅ <b>${files.length} files</b> selected.`;
+      }
+    }
+
+    function showResult(message, isSuccess) {
+      resultDiv.innerHTML = message;
+      resultDiv.className = 'result'; // Reset classes
+      resultDiv.classList.add(isSuccess ? 'success' : 'error');
+      resultDiv.classList.add('visible');
+    }
+
+    function setLoading(isLoading) {
+        if (isLoading) {
+            uploadBtn.classList.add('loading');
+            uploadBtn.disabled = true;
+        } else {
+            uploadBtn.classList.remove('loading');
+            uploadBtn.disabled = false;
+        }
+    }
+
+    async function handleUpload() {
+      if (files.length === 0) {
+        showResult('Please select at least one file to upload.', false);
+        return;
+      }
+      
+      setLoading(true);
+      resultDiv.classList.remove('visible'); // Hide previous result
+
+      const formData = new FormData();
+      files.forEach(f => formData.append('files', f));
+
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) {
+          // Try to get error message from server, or use a default one
+          const errorData = await res.text();
+          throw new Error(errorData || 'Server error during upload.');
+        }
+
+        const data = await res.json();
+        console.log('Server response:', data);
+        showResult(`
+          <strong>Success! Your files are ready.</strong><br/>
+          Share this URL: <a href="${data.url}" target="_blank">${data.url}</a>
+        `, true);
+
+      } catch (err) {
+        console.error(err);
+        showResult(`<strong>Upload Failed.</strong><br> ${err.message}`, false);
+      } finally {
+        setLoading(false);
+      }
+    }
+  </script>
+</body>
+</html>

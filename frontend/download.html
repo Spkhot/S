@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PrintBridge | Download Files</title>
+  <style>
+    /* --- Basic Setup & Theme --- */
+    :root {
+      --primary-color: #007bff;
+      --primary-hover: #0056b3;
+      --light-gray: #f8f9fa;
+      --border-color: #dee2e6;
+      --text-color: #333;
+      --error-color: #dc3545;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start; /* Align to top to see content sooner */
+      min-height: 100vh;
+      margin: 0;
+      padding-top: 5vh;
+      background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+      color: var(--text-color);
+    }
+
+    .container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      width: 90%;
+      max-width: 600px;
+      transition: all 0.3s ease;
+      min-height: 250px; /* Give it a minimum height */
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 2.2rem;
+      color: var(--text-color);
+    }
+
+    .tagline {
+      margin: 0 0 30px;
+      font-size: 1.1rem;
+      color: #6c757d;
+    }
+
+    /* --- File List & Animations --- */
+    #fileList {
+      text-align: left;
+      opacity: 0; /* Initially hidden for fade-in */
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    
+    #fileList.loaded {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Loading Spinner */
+    .loader {
+      border: 5px solid var(--light-gray);
+      border-top: 5px solid var(--primary-color);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 40px auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Error Message Style */
+    .error-message {
+      font-size: 1.1rem;
+      color: var(--error-color);
+      font-weight: bold;
+      text-align: center;
+      padding: 20px;
+    }
+
+    /* Link Styles */
+    .download-all-btn {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 15px 25px;
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      text-align: center;
+      text-decoration: none;
+      color: white;
+      background-color: var(--primary-color);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .download-all-btn:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      padding: 15px 10px;
+      text-decoration: none;
+      color: var(--text-color);
+      border-bottom: 1px solid var(--border-color);
+      transition: background-color 0.2s ease;
+      border-radius: 4px;
+    }
+    
+    .file-item:last-child {
+      border-bottom: none;
+    }
+    
+    .file-item:hover {
+      background-color: var(--light-gray);
+      color: var(--primary-color);
+    }
+    
+    .file-item-icon {
+      font-size: 1.5rem;
+      margin-right: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📂 Download Files</h1>
+    <p class="tagline">Your files are ready. Click to download them individually or get them all in a ZIP file.</p>
+    
+    <div id="fileList">
+      <!-- Loading spinner will be here initially -->
+      <div class="loader"></div>
+    </div>
+  </div>
+
+  <script>
+    const fileListDiv = document.getElementById('fileList');
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+
+    const showError = (message) => {
+      fileListDiv.innerHTML = `<div class="error-message">${message}</div>`;
+      fileListDiv.classList.add('loaded'); // Trigger fade-in animation
+    };
+
+    if (!code) {
+      showError('❌ Oops! This download link seems to be invalid or missing a code.');
+    } else {
+      fetch(`/api/files/${code}`)
+        .then(res => {
+            if (!res.ok) {
+                throw new Error('Could not find the requested files. The link may have expired.');
+            }
+            return res.json();
+        })
+        .then(files => {
+          if (!files || files.length === 0) {
+            showError('📭 The folder is empty or the files have been removed.');
+            return;
+          }
+
+          const downloadAllLink = `<a href="/api/zip/${code}" class="download-all-btn">⬇️ Download All as ZIP</a>`;
+          
+          const individualFiles = files.map(f => `
+            <a href="/api/download/${code}/${f.path}" class="file-item">
+              <span class="file-item-icon">📄</span>
+              <span>${f.filename}</span>
+            </a>
+          `).join('');
+
+          fileListDiv.innerHTML = downloadAllLink + individualFiles;
+          fileListDiv.classList.add('loaded'); // Trigger fade-in animation
+        })
+        .catch((err) => {
+          console.error(err);
+          showError(`❌ An error occurred: ${err.message}`);
+        });
+    }
+  </script>
+</body>
+</html>
