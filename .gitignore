@@ -1,0 +1,18 @@
+# Ignore environment variables
+.env
+
+# Node dependencies
+node_modules/
+
+# Uploaded files
+uploads/
+
+# Zipped files
+zips/
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
