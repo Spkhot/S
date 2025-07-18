@@ -1,24 +1,23 @@
 // backend/uploadMiddleware.js
-
 const multer = require('multer');
 const path = require('path');
 
-// ✅ Where to store files
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../uploads'));
-  },
+  destination: './uploads/',
   filename: (req, file, cb) => {
     const unique = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, unique + path.extname(file.originalname));
   }
 });
 
-// ✅ Add file size limit: e.g. 100 MB per file (adjust as needed)
+// ✅ Safe limits:
+// - Max 20 MB per file
+// - Max 5 files per request
 const upload = multer({
   storage,
   limits: {
-    fileSize: 100 * 1024 * 1024 // 100 MB per file
+    fileSize: 20 * 1024 * 1024, // 20 MB
+    files: 5
   }
 });
 
