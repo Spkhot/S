@@ -337,28 +337,27 @@ router.get('/zip/:shortId', async (req, res) => {
     return res.status(404).send('Files not found.');
   }
 
-  const zipPath = path.join(__dirname, `../zips/${shortId}.zip`);
-  const output = fs.createWriteStream(zipPath);
+  res.setHeader('Content-Disposition', `attachment; filename=${shortId}.zip`);
+  res.setHeader('Content-Type', 'application/zip');
+
   const archive = archiver('zip');
 
-  output.on('close', () => {
-    res.download(zipPath, `${shortId}.zip`, () => {
-      fs.unlinkSync(zipPath); // Delete zip after sending
-    });
-  });
-
+  // If there is an error creating the archive
   archive.on('error', err => {
     console.error('❌ Archiver error:', err);
     res.status(500).send('ZIP creation failed.');
   });
 
-  archive.pipe(output);
+  // Pipe archive directly to response
+  archive.pipe(res);
 
+  // Add files
   fileDoc.files.forEach(f => {
     archive.file(path.join(__dirname, '../uploads', f), { name: f });
   });
 
   archive.finalize();
 });
+
 
 module.exports = router;
