@@ -17,7 +17,7 @@ const app = express();
 // ✅ CORS if needed
 app.use(cors());
 
-// ✅ Modern Mongoose connect (no deprecated options)
+// ✅ Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => {
@@ -25,7 +25,10 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1);
   });
 
-// ✅ Static & uploads
+// ✅ Serve favicon & other public static files
+app.use(express.static(path.join(__dirname, '../public')));
+
+// ✅ Other static folders
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/zips', express.static(path.join(__dirname, '../zips')));

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShareFlow | Instant File Sharing</title>
+    
+    <link rel="icon" , href="logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #6a11cb;
+            --secondary-color: #2575fc;
+            --bg-color: #f0f2f5;
+            --card-color: #ffffff;
+            --text-color: #333;
+            --light-text-color: #666;
+            --border-color: #e0e0e0;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --dropzone-bg-hover: #f8f9fa;
+        }
+
+        /* --- Basic Setup --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+        }
+        /* --- Loader Styling --- */
+#loader {
+    position: fixed;
+    z-index: 9999;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+#loader.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+#loader .spinner {
+    border: 6px solid #f3f3f3;
+    border-top: 6px solid #00bfff; /* Sky blue */
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+        /* --- Main Container Card --- */
+        .container {
+            background: var(--card-color);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            background: -webkit-linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tagline {
+            font-size: 1.1rem;
+            color: var(--light-text-color);
+            margin-bottom: 30px;
+        }
+
+        /* --- Drop Zone --- */
+        #drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        #drop-zone.drag-over {
+            border-color: var(--primary-color);
+            background-color: var(--dropzone-bg-hover);
+        }
+
+        .upload-icon {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 15px;
+            color: var(--secondary-color);
+        }
+
+        #drop-zone-text {
+            color: var(--light-text-color);
+            font-size: 1rem;
+        }
+        
+        #drop-zone-text b {
+            color: var(--text-color);
+            font-weight: 500;
+        }
+        
+        .upload-limits {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: -10px;
+            margin-bottom: 20px;
+        }
+
+        /* --- File List --- */
+        #file-list {
+            text-align: left;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+
+        .file-item {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            color: var(--text-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Hidden default file input */
+        #file-input {
+            display: none;
+        }
+        
+        /* --- Custom Link Input --- */
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-group-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--light-text-color);
+        }
+
+        #custom-id {
+            width: 100%;
+            padding: 14px 14px 14px 45px; /* Make space for icon */
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #custom-id:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.2);
+        }
+
+        /* --- Upload Button & Spinner --- */
+        #upload-btn {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #upload-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
+        }
+        
+        #upload-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .button-text {
+            transition: opacity 0.3s ease;
+        }
+
+        .spinner {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 24px;
+            height: 24px;
+            margin-top: -12px;
+            margin-left: -12px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        #upload-btn.loading .spinner {
+            display: block;
+        }
+
+        #upload-btn.loading .button-text {
+            opacity: 0;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* --- Result Message --- */
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            word-wrap: break-word;
+        }
+        
+        #result.visible {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        #result.success {
+            background-color: #e9f7ec;
+            border: 1px solid var(--success-color);
+            color: #155724;
+        }
+
+        #result.error {
+            background-color: #f8d7da;
+            border: 1px solid var(--error-color);
+            color: #721c24;
+        }
+
+        #result a {
+            color: var(--secondary-color);
+            font-weight: 600;
+            text-decoration: none;
+        }
+        
+        #result a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="loader">
+        <div class="spinner"></div>
+    </div>
+    <div class="container">
+        <h1>ShareFlow</h1>
+        <p class="tagline">Your simple bridge to send files anywhere.</p>
+
+        <div id="drop-zone">
+            <div class="upload-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+            </div>
+            <span id="drop-zone-text"><b>Drag & drop files here</b><br>or click to select</span>
+        </div>
+        
+        <p class="upload-limits">Upload up to 5 files, 20MB each.</p>
+        
+        <div id="file-list"></div>
+
+        <input type="file" id="file-input" multiple />
+
+        <div class="input-group">
+            <div class="input-group-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"/><path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4.02 4.02 0 0 1-.82 1H12a3 3 0 1 0 0-6H9z"/></svg>
+            </div>
+            <input type="text" id="custom-id" placeholder="your-custom-link-name. ex - par1, par2, code." />
+        </div>
+
+        <button id="upload-btn">
+            <span class="button-text">Upload & Get Link</span>
+            <div class="spinner"></div>
+        </button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        window.addEventListener("load", () => {
+            const loader = document.getElementById('loader');
+            loader.classList.add('fade-out');
+        });
+        const dropZone = document.getElementById('drop-zone');
+        const dropZoneText = document.getElementById('drop-zone-text');
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-btn');
+        const resultDiv = document.getElementById('result');
+        const customIdInput = document.getElementById('custom-id');
+        const fileListDiv = document.getElementById('file-list');
+        let files = [];
+
+        // In a real application, you'd fetch this from your backend
+        // For demonstration, we'll simulate taken URLs
+        const takenCustomUrls = ['takenlink', 'example123', 'shareflowtest']; 
+
+        // --- Event Listeners ---
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        dropZone.addEventListener('dragleave', e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+        });
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleFileSelection(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', () => {
+            handleFileSelection(fileInput.files);
+        });
+        uploadBtn.addEventListener('click', handleUpload);
+        
+        function handleFileSelection(selectedFiles) {
+            files = Array.from(selectedFiles);
+            updateFileDisplay();
+        }
+
+        // --- UI Update Functions ---
+        function updateFileDisplay() {
+            fileListDiv.innerHTML = ''; // Clear previous list
+            if (files.length === 0) {
+                dropZoneText.innerHTML = '<b>Drag & drop files here</b><br>or click to select';
+            } else {
+                dropZoneText.innerHTML = `✅ <b>${files.length} file${files.length > 1 ? 's' : ''}</b> ready to upload.`;
+                files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.textContent = file.name;
+                    fileListDiv.appendChild(fileItem);
+                });
+            }
+        }
+        
+        function showResult(message, isSuccess) {
+            resultDiv.innerHTML = message;
+            resultDiv.className = 'result'; // Reset classes
+            resultDiv.classList.add(isSuccess ? 'success' : 'error');
+            resultDiv.classList.add('visible');
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                uploadBtn.classList.add('loading');
+                uploadBtn.disabled = true;
+            } else {
+                uploadBtn.classList.remove('loading');
+                uploadBtn.disabled = false;
+            }
+        }
+        
+        // --- Core Upload Logic (Modified for custom URL check) ---
+        async function handleUpload() {
+            if (files.length === 0) {
+                showResult('Please select at least one file to upload.', false);
+                return;
+            }
+
+            setLoading(true);
+            resultDiv.classList.remove('visible');
+
+            const formData = new FormData();
+            files.forEach(f => formData.append('files', f));
+
+            const customId = customIdInput.value.trim();
+            let sanitizedId = '';
+            if (customId) {
+                // Sanitize custom ID to be URL-friendly
+                sanitizedId = customId.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+                formData.append('customId', sanitizedId);
+                customIdInput.value = sanitizedId; // Show user the sanitized version
+
+                // *** START: CUSTOM URL AVAILABILITY SIMULATION ***
+                // In a real application, you'd send a request to your server to check availability
+                // For demonstration:
+                if (takenCustomUrls.includes(sanitizedId)) {
+                    setLoading(false);
+                    showResult(`<strong>Oops!</strong> The custom URL "<strong>${sanitizedId}</strong>" is already taken. Please try a different one.`, false);
+                    return; // Stop the upload process
+                }
+                // *** END: CUSTOM URL AVAILABILITY SIMULATION ***
+            }
+
+            try {
+                // NOTE: This fetch call remains exactly the same.
+                // Your backend `/api/upload` should be designed to handle the customId
+                // and return an appropriate error (e.g., HTTP 409 Conflict) if it's taken.
+                const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const errorText = await res.text(); // Get raw error text
+                    let errorMessage = 'Server error during upload.';
+
+                    // Attempt to parse JSON error if available
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        if (errorJson.message) {
+                            errorMessage = errorJson.message;
+                        } else if (res.status === 409) { // Common status for conflict/already taken
+                            errorMessage = `The custom URL "<strong>${sanitizedId}</strong>" is already taken. Please try a different one.`;
+                        } else {
+                            errorMessage = `An unexpected error occurred (Status: ${res.status}).`;
+                        }
+                    } catch (e) {
+                        // If not JSON, use raw text or generic message
+                        errorMessage = errorText || `An unexpected error occurred (Status: ${res.status}).`;
+                        // Specifically handle a 409 if it's not JSON and you expect it for URL conflicts
+                        if (res.status === 409 && customId) {
+                             errorMessage = `The custom URL "<strong>${sanitizedId}</strong>" is already taken. Please try a different one.`;
+                        }
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+
+                const data = await res.json();
+                showResult(`
+                    <strong>Success! Your files are ready.</strong><br/>
+                    Share this URL: <a href="${data.url}" target="_blank">${data.url}</a>
+                `, true);
+
+            } catch (err) {
+                console.error(err);
+                showResult(`<strong>Upload Failed.</strong><br> ${err.message}`, false);
+            } finally {
+                setLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>
