@@ -6,6 +6,7 @@
     <title>ShareFlow | Instant File Sharing</title>
     
     <!-- Google Fonts for a modern look -->
+     <link rel="icon" , href="logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -41,6 +42,37 @@
             padding: 20px;
             color: var(--text-color);
         }
+        /* --- Loader Styling --- */
+#loader {
+  position: fixed;
+  z-index: 9999;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+
+#loader.fade-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+#loader .spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #00bfff; /* Sky blue */
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
         /* --- Main Container Card --- */
         .container {
@@ -261,7 +293,10 @@
     </style>
 </head>
 <body>
-
+     <!-- Loader -->
+  <div id="loader">
+    <div class="spinner"></div>
+  </div>
     <div class="container">
         <h1>ShareFlow</h1>
         <p class="tagline">Your simple bridge to send files anywhere.</p>
@@ -285,7 +320,7 @@
                 <!-- SVG Icon for crispness -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6.354 5.5H4a3 3 0 0 0 0 6h3a3 3 0 0 0 2.83-4H9c-.086 0-.17.01-.25.031A2 2 0 0 1 7 10.5H4a2 2 0 1 1 0-4h1.535c.218-.376.495-.714.82-1z"/><path d="M9 5.5a3 3 0 0 0-2.83 4h1.098A2 2 0 0 1 9 6.5h3a2 2 0 1 1 0 4h-1.535a4.02 4.02 0 0 1-.82 1H12a3 3 0 1 0 0-6H9z"/></svg>
             </div>
-            <input type="text" id="custom-id" placeholder="Optional: your-custom-link-name" />
+            <input type="text" id="custom-id" placeholder="your-custom-link-name. ex - par1, par2, code." />
         </div>
 
         <button id="upload-btn">
@@ -297,6 +332,10 @@
     </div>
 
     <script>
+        window.addEventListener("load", () => {
+    const loader = document.getElementById('loader');
+    loader.classList.add('fade-out');
+  });
         const dropZone = document.getElementById('drop-zone');
         const dropZoneText = document.getElementById('drop-zone-text');
         const fileInput = document.getElementById('file-input');
